@@ -31,6 +31,7 @@ const LABELS = {
   "session expired time": "sessionExpiredTime",
   "user expiry date": "userExpiryDate",
   "user terminal ip": "userTerminalIp",
+  "upload image": "photo", // file name inside cypress/fixtures/images/, e.g. john.jpg
 };
 
 /** Turns the { "User ID *": "231", ... } sheet object into { userId: "231", ... }. */
@@ -50,6 +51,7 @@ function rowFromSheet(sheet) {
 
 const OFFICE ="input[controlname='officeId']";
 const TERMINAL_IP = "input[controlname='userTerminalIpInput']";
+const PHOTO_INPUT = "input[type='file']"; // TODO: narrow with controlname if the page has several file inputs
 const ADD_BUTTON = "button[aria-label='ADD']";
 const SAVE_BUTTON = "#btn-action-save";
 
@@ -71,23 +73,56 @@ class UserRegisterPage extends BasePage {
     return this.fillFromRow(rowFromSheet(sheet));
   }
 
+  /** Converts the sheet object into { firstName, lastName, ... } (e.g. to compare later). */
+  toRow(sheet) {
+    return rowFromSheet(sheet);
+  }
+
+  /**
+   * On a page that shows the same form (e.g. Process Approval), checks every field holds the
+   * value we registered (User ID included: it comes from the Excel sheet).
+   */
+  assertMatchesRow(row) {
+    Object.entries(FIELDS).forEach(([column, selector]) => {
+      if (!hasValue(row[column])) return;
+      cy.get(selector, { timeout: 15000 }).should("have.value", String(row[column]).trim());
+    });
+    const office = hasValue(row.officeId) ? String(row.officeId).trim() : "Head office";
+    cy.get(OFFICE).invoke("val").should("contain", office);
+    return this;
+  }
+
   /** Fills the form from one { userId, firstName, ... } object. */
   fillFromRow(row) {
     Object.entries(FIELDS).forEach(([column, selector]) => {
       if (!hasValue(row[column])) return;
-      cy.get(selector, { timeout: 15000 }).clear().type(String(row[column]).trim());
+      // scrollIntoView + force: the field can be partly clipped by the form's scroll area
+      cy.get(selector, { timeout: 15000 })
+        .scrollIntoView()
+        .clear({ force: true })
+        .type(String(row[column]).trim(), { force: true });
     });
 
     // Office ID cell empty -> pick "Head office" from the dropdown
     this.selectOffice(hasValue(row.officeId) ? String(row.officeId).trim() : "Head office");
     if (hasValue(row.userTerminalIp)) this.addTerminalIp(String(row.userTerminalIp).trim());
+    if (hasValue(row.photo)) this.uploadPhoto(String(row.photo).trim());
+    return this;
+  }
+
+  // Uploads cypress/fixtures/images/<fileName>. Update the Excel "Photo" cell to change the image.
+  uploadPhoto(fileName) {
+    const path = `cypress/fixtures/images/${fileName}`;
+    cy.readFile(path, null, { log: false }).should("exist"); // clear failure if the file is missing
+    cy.get(PHOTO_INPUT).selectFile(path, { force: true }); // file inputs are often hidden
     return this;
   }
 
   // No typing: opens the dropdown and clicks the option whose text contains `text`.
   // Options look like "0001 - Head office" (div.dropdown-option > span.option-label).
   selectOffice(text) {
-    cy.get(OFFICE).click();
+    // 30s: a loading overlay can cover the form for a while; click retries until it is gone
+    cy.get(OFFICE, { timeout: 30000 }).click({ timeout: 30000 });
     cy.contains(".dropdown-menu .dropdown-option .option-label", text, { timeout: 10000 })
       .should("be.visible")
       .click();

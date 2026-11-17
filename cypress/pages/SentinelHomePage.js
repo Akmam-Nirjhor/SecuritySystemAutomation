@@ -12,6 +12,10 @@ class SentinelHomePage extends BasePage {
     return cy.contains("app-sidebar .nav-label", "Functions", { timeout: 30000 });
   }
 
+  get approvalFlowMenu() {
+    return cy.contains("app-sidebar .nav-label", "Approval Flow", { timeout: 30000 });
+  }
+
   assertLoaded() {
     this.assertUrlContains("/sentinel-app/landing/home");
     this.functionsMenu.should("be.visible");
@@ -20,6 +24,11 @@ class SentinelHomePage extends BasePage {
 
   openFunctions() {
     this.functionsMenu.click();
+    return this;
+  }
+
+  openApprovalFlow() {
+    this.approvalFlowMenu.should("be.visible").click();
     return this;
   }
 

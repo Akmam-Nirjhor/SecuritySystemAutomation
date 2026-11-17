@@ -11,7 +11,9 @@ Cypress.Commands.add("login", (rowIndex = 0) => {
   // Credentials come from the first row of cypress/fixtures/users.xlsx
   // (columns: username, password). Pass a different rowIndex to use another user.
   cy.task("readExcel", "cypress/fixtures/users.xlsx").then((rows) => {
-    const { username, password } = rows[rowIndex];
+    // trim: Excel cells often carry a trailing space/newline, which Keycloak rejects
+    const username = String(rows[rowIndex].username).trim();
+    const password = String(rows[rowIndex].password).trim();
     cy.log(`Logging in as ${username}`);
     cy.visit("/launcher-app/feature/userapp"); // redirects to Keycloak
     cy.origin(
