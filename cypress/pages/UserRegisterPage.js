@@ -13,7 +13,8 @@ const FIELDS = {
   employeeId: "input[controlname='employeeId']",
   emailId: "input[controlname='userEmailId']",
   mobileNo: "input[controlname='mobileNumber']",
-  businessHour: "input[controlname='businessHour']",
+  businessHourStart: "input[controlname='businessHourStart']", // TODO: confirm controlname
+  businessHourEnd: "input[controlname='businessHourEnd']",
   sessionExpiredTime: "input[controlname='sessionExpTime']",
   userExpiryDate: "input[controlname='userExpiryDate']",
 };
@@ -27,7 +28,6 @@ const LABELS = {
   "employee id": "employeeId",
   "email id": "emailId",
   "mobile no": "mobileNo",
-  "business hour": "businessHour",
   "session expired time": "sessionExpiredTime",
   "user expiry date": "userExpiryDate",
   "user terminal ip": "userTerminalIp",
@@ -41,6 +41,9 @@ function rowFromSheet(sheet) {
     const key = LABELS[label.replace(/\*/g, "").trim().toLowerCase()];
     if (key) row[key] = value;
   });
+  // Business hours are not read from Excel: they are always picked from the dropdowns
+  row.businessHourStart = BUSINESS_HOUR.start;
+  row.businessHourEnd = BUSINESS_HOUR.end;
   // 12122026 -> 12-12-2026 (datepicker placeholder is DD-MM-YYYY)
   if (/^\d{8}$/.test(String(row.userExpiryDate || "").trim())) {
     const d = String(row.userExpiryDate).trim();
@@ -49,6 +52,10 @@ function rowFromSheet(sheet) {
   return row;
 }
 
+// Options picked from the Business Hour Start / End dropdowns (30 min steps; End must be later than Start)
+const BUSINESS_HOUR = { start: "09:00", end: "18:00" };
+
+const TIME_FIELDS =["businessHourStart", "businessHourEnd"]; // Start before End
 const OFFICE ="input[controlname='officeId']";
 const TERMINAL_IP = "input[controlname='userTerminalIpInput']";
 const PHOTO_INPUT = "input[type='file']"; // TODO: narrow with controlname if the page has several file inputs
@@ -96,6 +103,7 @@ class UserRegisterPage extends BasePage {
   fillFromRow(row) {
     Object.entries(FIELDS).forEach(([column, selector]) => {
       if (!hasValue(row[column])) return;
+      if (TIME_FIELDS.includes(column)) return; // dropdowns: picked below
       // scrollIntoView + force: the field can be partly clipped by the form's scroll area
       cy.get(selector, { timeout: 15000 })
         .scrollIntoView()
@@ -103,10 +111,40 @@ class UserRegisterPage extends BasePage {
         .type(String(row[column]).trim(), { force: true });
     });
 
+    // Business hours are dropdowns (30 min steps). Typing does not set the value, so pick the option.
+    // Start first: End only lists times later than Start.
+    TIME_FIELDS.forEach((column) => this.selectTime(FIELDS[column], row[column]));
+
     // Office ID cell empty -> pick "Head office" from the dropdown
     this.selectOffice(hasValue(row.officeId) ? String(row.officeId).trim() : "Head office");
     if (hasValue(row.userTerminalIp)) this.addTerminalIp(String(row.userTerminalIp).trim());
     if (hasValue(row.photo)) this.uploadPhoto(String(row.photo).trim());
+    return this;
+  }
+
+  /**
+   * After approval: types the User ID and checks the app can fetch the user (200).
+   * Retries a few times in case the backend creates the user a moment after approval.
+   */
+  assertUserRegistered(userId, attempts = 12) {
+    const id = String(userId).trim();
+    cy.intercept("GET", `**/User/RetrieveByUserName/${id}`).as("fetchUser");
+    const attempt = (n) => {
+      cy.get(FIELDS.userId, { timeout: 15000 }).scrollIntoView().clear({ force: true }).type(id, { force: true });
+      cy.wait("@fetchUser", { timeout: 20000 }).then(({ response }) => {
+        if (response.statusCode !== 200 && n < attempts) {
+          cy.log(`User ${id} not fetchable yet (attempt ${n}/${attempts}, status ${response.statusCode}); waiting 10 s`);
+          cy.wait(10000);
+          attempt(n + 1);
+          return;
+        }
+        expect(
+          response.statusCode,
+          `User ${id} fetch after approval (${JSON.stringify(response.body).slice(0, 300)})`
+        ).to.eq(200);
+      });
+    };
+    attempt(1);
     return this;
   }
 
@@ -126,6 +164,19 @@ class UserRegisterPage extends BasePage {
     cy.contains(".dropdown-menu .dropdown-option .option-label", text, { timeout: 10000 })
       .should("be.visible")
       .click();
+    return this;
+  }
+
+  // Opens a "HH:mm" dropdown and clicks the exact option (options exist every 30 min: 00:00, 00:30, ...).
+  selectTime(selector, time) {
+    cy.get(selector, { timeout: 15000 }).scrollIntoView().click({ force: true });
+    // No class is assumed for the options: any visible element whose whole text is the time
+    cy.contains("li, div, span, mat-option, button", new RegExp(`^\\s*${time}\\s*$`), { timeout: 10000 })
+      .scrollIntoView()
+      .should("be.visible")
+      .click();
+    // the field must now show the chosen time, otherwise the value was not committed
+    cy.get(selector).should("have.value", time);
     return this;
   }
 

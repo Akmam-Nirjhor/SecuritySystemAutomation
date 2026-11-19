@@ -1,0 +1,33 @@
+{
+  "url": "http://192.168.10.227:9999/Sentinel/v1/Changeboard/Approval/Sets/7546/Decisions",
+  "body": {
+    "approvalFlag": 1,
+    "remarks": ""
+  },
+  "status": 200,
+  "response": {
+    "recordUserId": "avisheak",
+    "recordDt": "2026-11-19T17:00:07.48491",
+    "actionType": "CREATE",
+    "approveFlag": "APPROVED",
+    "remarks": "User \"9898\" create.",
+    "cloneObject": null,
+    "approvalTempKey": null,
+    "setId": 7546,
+    "noOfApprovalLevel": 0,
+    "minApprovalLevelReq": 0,
+    "lastApprovalLevel": 1,
+    "nextApprovalLevel": 0,
+    "primaryTableNm": "LOGR_CHANGE_DATA",
+    "previousUxContent": null,
+    "currentUxContent": "{\n  \"recordUserId\" : \"avisheak\",\n  \"recordDt\" : \"2026-11-19T17:00:07.434013368\",\n  \"actionType\" : \"CREATE\",\n  \"approveFlag\" : \"PENDING\",\n  \"remarks\" : \"User \\\"9898\\\" create.\",\n  \"cloneObject\" : null,\n  \"approvalTempKey\" : null,\n  \"id\" : 1021,\n  \"functionId\" : 101001,\n  \"functionName\" : \"User Profile Registration\",\n  \"dataset\" : \"{\\\"userNm\\\":\\\"9898\\\",\\\"firstName\\\":\\\"New\\\",\\\"lastName\\\":\\\"OLD\\\",\\\"organizationId\\\":1,\\\"officeId\\\":1,\\\"userEmailId\\\":\\\"akmam.nirjhor+8@leads-bd.com\\\",\\\"employeeId\\\":\\\"321\\\",\\\"userTerminalIp\\\":\\\"\\\",\\\"passwordString\\\":\\\"L+csRiupQZEVhJ3cbtNKDA==\\\",\\\"forcePasswordChangedFlag\\\":0,\\\"userStatusFlag\\\":1,\\\"userStatusChangedDate\\\":null,\\\"userStatusChangeReason\\\":\\\"\\\",\\\"failedLoginAttemptsNos\\\":0,\\\"passwordExpiryAlertMsg\\\":null,\\\"mobileNumber\\\":\\\"01715488256\\\",\\\"sessionExpTime\\\":5,\\\"clickStreamTrack\\\":0,\\\"businessHour\\\":null,\\\"businessHourStart\\\":\\\"09:00\\\",\\\"businessHourEnd\\\":\\\"18:00\\\",\\\"userImg\\\":null,\\\"isPasswordEmailSend\\\":0,\\\"isNotificationSend\\\":0,\\\"userExpiryDate\\\":\\\"2026-12-12T00:00:00\\\",\\\"keycloakId\\\":null,\\\"fullName\\\":\\\"New OLD\\\",\\\"errorCode\\\":null,\\\"actionType\\\":0,\\\"recordUserId\\\":\\\"avisheak\\\",\\\"remarks\\\":\\\"User \\\\\\\"9898\\\\\\\" create.\\\",\\\"notificationSend\\\":0,\\\"passwordEmailSend\\\":0}\",\n  \"prevDataset\" : null\n}",
+    "functionName": "Register User Profile",
+    "appId": 1,
+    "functionId": 101001,
+    "selector": "app-user-profile",
+    "qualifiedClassName": "com.leads.security.changelog.repository.ChangeLogEntity",
+    "processingMode": "LEGACY",
+    "auditEnabled": true,
+    "plainEntity": false
+  }
+}

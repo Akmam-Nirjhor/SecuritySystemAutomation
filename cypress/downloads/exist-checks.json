@@ -1,0 +1,12 @@
+{
+  "email": {
+    "url": "http://192.168.10.227:9999/Sentinel/v1/User/UserExistByEmail?email=akmam.nirjhor%2B8%40leads-bd.com",
+    "status": 200,
+    "body": false
+  },
+  "employeeId": {
+    "url": "http://192.168.10.227:9999/Sentinel/v1/User/UserExistByEmployeeId?employeeId=321",
+    "status": 200,
+    "body": false
+  }
+}
